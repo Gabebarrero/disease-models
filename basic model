@@ -1,0 +1,36 @@
+library(deSolve)
+library(ggplot2)
+library(reshape2)
+
+
+initial_state_values=c(S=0.90*999999,I=1,R=0) #initial conditions as a porportion of population
+parameters=c(gamma=0.0,beta=0.7) # defining variables change beta to reflect different r0s and gamma to influence recover
+
+
+time=seq(from=1,to=165,by=1) #eulers method change time scale here 
+time
+#SIR Model function
+sir_model3 <- function(time,state,parameters){
+  with(as.list(c(state,parameters)),{
+    N=S+I+R # making the equation a porportion of population
+    lambda=beta*(I/N) #
+    dS=-lambda*S 
+    dI=lambda*S#-gamma*I if you want to model with recovery uncomment and change gamma above
+    dR=0 #gamma*I if you want to model with recovery uncomment and change gamma above
+    
+    return(list(c(dS,dI,dR)))
+  }
+  )
+}
+
+# Solving the differential equations:
+output<-as.data.frame(ode(y=initial_state_values,func = sir_model3,parms=parameters,times = time))
+
+out_long=melt(output,id="time") #melting the df ggplot works better with long df
+
+#Plot of prevalance
+ggplot(data = out_long,         
+       aes(x = time, y = value/1000000, colour = variable, group = variable)) +  
+  geom_line() + ggtitle("SIR model for reddit")    +                                                     
+  xlab("Time (days)")+                          
+  ylab("Prevalance") +scale_color_discrete(name="State")
